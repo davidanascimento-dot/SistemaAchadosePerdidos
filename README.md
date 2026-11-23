@@ -13,30 +13,16 @@ src/controllers/objetosController.js -> regras de negócio, validações, acesso
 public/index.html         -> interface do usuário
 public/script.js          -> comunicação front-end com a API (fetch + JSON)
 public/style.css          -> estilos da interface
+banco.sql                 -> criação da tabela no Supabase
 .env                      -> URL e chave do Supabase
 ```
 
 ## Como executar
 
-1. Garanta que a tabela `objetos` já exista no projeto Supabase.
+1. No **SQL Editor** do Supabase, rode o conteúdo de `banco.sql` (cria a tabela `objetos`).
 2. Instale as dependências: `npm install`
 3. Inicie: `npm start`
 4. Acesse: http://localhost:3001
-
-## Publicar na Vercel
-
-1. Envie o projeto para um repositório Git e importe esse repositório na Vercel.
-2. Em **Settings > Environment Variables** do projeto na Vercel, configure `SUPABASE_URL` e `SUPABASE_KEY` com os valores do seu projeto Supabase. Não configure `PORT`; a Vercel gerencia a porta.
-3. Faça um novo deploy. A Vercel publicará os arquivos de `public/` e encaminhará as rotas `/api/*` para a aplicação Express.
-4. Acesse o domínio gerado pela Vercel. A API estará disponível no mesmo domínio em `/api` e `/api/objetos`.
-
-O arquivo `.env` é usado somente na execução local e não deve ser enviado ao repositório. Como ele já estava versionado, remova-o do controle de versão e troque/rotacione a chave do Supabase antes de publicar:
-
-```powershell
-git rm --cached .env
-```
-
-Mantenha o `.env` no computador e configure os valores diretamente no painel da Vercel.
 
 ## API
 
@@ -61,6 +47,24 @@ Exemplo de JSON enviado no POST/PUT:
   "situacao": "Disponível"
 }
 ```
+
+## Deploy na Vercel
+
+O app Express é exportado em `api/index.js` e todas as rotas `/api/*` são direcionadas para ele pelo `vercel.json`. Os arquivos de `public/` (index.html, style.css, script.js) são servidos pela CDN da Vercel. Não use `outputDirectory: public` — isso publica só o front-end e faz a API retornar 404.
+
+Opção 1 — pelo site:
+1. Acesse https://vercel.com/new e importe o repositório `Santana73/CRUD---ATIVIDADE-PR-TICA`.
+2. Mantenha as configurações padrão (Framework: Express/Other) e clique em **Deploy**.
+3. A URL será `https://<nome-do-projeto>.vercel.app`.
+
+Opção 2 — pela CLI:
+```bash
+npm install -g vercel
+vercel login
+vercel deploy --prod
+```
+
+A chave do Supabase usada é uma *publishable key* (pública) e já está no `.env`, que vai junto do deploy. Também é possível cadastrar `SUPABASE_URL` e `SUPABASE_KEY` como variáveis de ambiente no painel da Vercel.
 
 ## Validações e tratamento de erros
 
