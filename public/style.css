@@ -18,14 +18,14 @@
 
 body {
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-
+    background: var(--fundo);
     color: var(--texto);
     line-height: 1.5;
     padding-bottom: 30px;
 }
 
 .cabecalho {
-
+    background: linear-gradient(120deg, #1e40af, #3b82f6);
     color: #fff;
     padding: 24px max(24px, calc((100vw - 1100px) / 2));
     display: flex;
