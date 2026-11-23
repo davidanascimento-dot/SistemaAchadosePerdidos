@@ -3,15 +3,99 @@ const form = document.getElementById('form-objeto')
 const tituloForm = document.getElementById('titulo-form')
 const botaoSalvar = document.getElementById('btn-salvar')
 const botaoCancelar = document.getElementById('btn-cancelar')
+const botaoNovo = document.getElementById('btn-novo')
 const corpoTabela = document.getElementById('corpo-tabela')
 const aviso = document.getElementById('aviso')
 const campoBusca = document.getElementById('busca')
-const filtroSituacao = document.getElementById('filtro-situacao')
+const chipsFiltro = document.querySelectorAll('.chip')
 const contador = document.getElementById('contador')
 const vazio = document.getElementById('vazio')
+const totalTodas = document.getElementById('total-todas')
+const totalDisponiveis = document.getElementById('total-disponiveis')
+const totalDevolvidos = document.getElementById('total-devolvidos')
 
-// guarda o ID do objeto que está sendo editado
+// guarda o ID do objeto que está sendo editado e o filtro ativo
 let editandoId = null
+let situacaoAtiva = ''
+
+// ---------- camada de dados ----------
+// No Live Server (ou abrindo o HTML direto) não existe a API Node.
+// Nesse caso os dados ficam no localStorage e o CRUD continua funcionando.
+const CHAVE_LOCAL = 'achados-perdidos-objetos'
+let modoLocal = false
+let origemApi = null // null = ainda não descoberta; '' = mesma origem
+
+function carregarLocal() {
+    try {
+        const dados = JSON.parse(localStorage.getItem(CHAVE_LOCAL) || '[]')
+        return Array.isArray(dados) ? dados : []
+    } catch (erro) {
+        return []
+    }
+}
+
+function gravarLocal(lista) {
+    localStorage.setItem(CHAVE_LOCAL, JSON.stringify(lista))
+}
+
+// tenta a API na mesma origem e, depois, no servidor Node padrão (porta 3001).
+// Se nenhuma responder, ativa o modo local.
+async function requisitarApi(caminho, opcoes) {
+    if (modoLocal) return null
+
+    // No Live Server (5500/5501) ou abrindo o HTML direto, a origem atual é
+    // estática: tenta primeiro o servidor Node para não gerar 404 desnecessário.
+    const porta = window.location.port
+    const estatico = porta === '5500' || porta === '5501' || window.location.protocol === 'file:'
+    const origens = origemApi !== null
+        ? [origemApi]
+        : (estatico ? ['http://localhost:3001'] : ['', 'http://localhost:3001'])
+
+    for (const origem of origens) {
+        try {
+            const resposta = await fetch(origem + caminho, opcoes)
+            const tipo = resposta.headers.get('content-type') || ''
+
+            // HTML (404 de servidor estático): esta origem não tem API
+            if (!tipo.includes('application/json')) continue
+
+            const dados = await resposta.json()
+
+            // a API respondeu em JSON com erro: mostra a mensagem ao usuário
+            if (!resposta.ok) {
+                const erro = new Error(dados.erro || dados.detalhe || 'Erro na API')
+                erro.daApi = true
+                throw erro
+            }
+
+            origemApi = origem
+            return dados
+        } catch (erro) {
+            if (erro.daApi) throw erro
+            // falha de rede / servidor indisponível: tenta a próxima origem
+        }
+    }
+
+    modoLocal = true
+    esconderAviso()
+    return null
+}
+
+function salvarLocalmente(id, objeto) {
+    const lista = carregarLocal()
+
+    if (id) {
+        const indice = lista.findIndex(function (item) { return Number(item.id) === Number(id) })
+        if (indice >= 0) lista[indice] = Object.assign({}, objeto, { id: Number(id) })
+    } else {
+        const proximoId = lista.reduce(function (maior, item) {
+            return Math.max(maior, Number(item.id) || 0)
+        }, 0) + 1
+        lista.push(Object.assign({}, objeto, { id: proximoId }))
+    }
+
+    gravarLocal(lista)
+}
 
 // data de hoje no formato usado pelo input date (ano-mes-dia)
 function dataDeHoje() {
@@ -48,24 +132,47 @@ function formatarData(data) {
     return partes.length === 3 ? `${partes[2]}/${partes[1]}/${partes[0]}` : data
 }
 
-// CONSULTAR: carrega todos os objetos da API
+// ícones em SVG usados nos botões de ação
+const iconeEditar = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>'
+const iconeExcluir = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v5M14 11v5"/></svg>'
+
+// CONSULTAR: carrega os objetos da API ou do armazenamento local
 async function listar() {
     try {
         const parametros = new URLSearchParams()
         const busca = campoBusca.value.trim()
-        const situacao = filtroSituacao.value
 
         if (busca) parametros.append('busca', busca)
-        if (situacao) parametros.append('situacao', situacao)
 
-        const resposta = await fetch('/api/objetos?' + parametros.toString())
-        const dados = await resposta.json()
+        let dados = await requisitarApi('/api/objetos?' + parametros.toString())
 
-        if (!resposta.ok) {
-            throw new Error(dados.detalhe || dados.erro || 'Erro ao carregar os objetos')
+        if (modoLocal) {
+            dados = carregarLocal()
+
+            if (busca) {
+                const termo = busca.toLowerCase()
+                dados = dados.filter(function (objeto) {
+                    return String(objeto.descricao || '').toLowerCase().includes(termo) ||
+                        String(objeto.local || '').toLowerCase().includes(termo)
+                })
+            }
+
+            dados = dados.slice().sort(function (a, b) { return Number(b.id) - Number(a.id) })
         }
 
-        mostrarTabela(dados)
+        const objetos = Array.isArray(dados) ? dados : []
+
+        // atualiza as contagens dos filtros
+        totalTodas.textContent = objetos.length
+        totalDisponiveis.textContent = objetos.filter(function (o) { return o.situacao === 'Disponível' }).length
+        totalDevolvidos.textContent = objetos.filter(function (o) { return o.situacao === 'Devolvido' }).length
+
+        // aplica o filtro escolhido nas "pílulas"
+        const filtrados = situacaoAtiva
+            ? objetos.filter(function (o) { return o.situacao === situacaoAtiva })
+            : objetos
+
+        mostrarTabela(filtrados)
     } catch (erro) {
         corpoTabela.innerHTML = ''
         contador.textContent = '0 objeto(s) encontrado(s)'
@@ -84,19 +191,23 @@ function mostrarTabela(objetos) {
 
         const classeSituacao = objeto.situacao === 'Devolvido' ? 'devolvido' : 'disponivel'
         const proximaSituacao = objeto.situacao === 'Disponível' ? 'Devolvido' : 'Disponível'
-        const rotuloBotao = objeto.situacao === 'Disponível' ? 'Marcar devolvido' : 'Marcar disponível'
+
+        // no celular cada célula ganha um rótulo via CSS (data-label)
+        const botaoDevolver = objeto.situacao === 'Disponível'
+            ? `<button type="button" class="button-small" data-acao="situacao" data-id="${objeto.id}" data-situacao="${escapar(proximaSituacao)}">Devolver</button>`
+            : ''
 
         linha.innerHTML = `
-            <td>${objeto.id}</td>
-            <td><strong>${escapar(objeto.descricao)}</strong></td>
-            <td>${escapar(objeto.categoria)}</td>
-            <td>${escapar(objeto.local)}</td>
-            <td>${formatarData(objeto.data_registro)}</td>
-            <td><span class="situacao ${classeSituacao}">${escapar(objeto.situacao)}</span></td>
-            <td class="botoes-tabela">
-                <button type="button" class="button-small" data-acao="editar" data-id="${objeto.id}">Editar</button>
-                <button type="button" class="button-small" data-acao="situacao" data-id="${objeto.id}" data-situacao="${escapar(proximaSituacao)}">${rotuloBotao}</button>
-                <button type="button" class="button-small danger" data-acao="excluir" data-id="${objeto.id}">Excluir</button>
+            <td class="col-id" data-label="ID">${objeto.id}</td>
+            <td data-label="Descrição"><strong>${escapar(objeto.descricao)}</strong></td>
+            <td data-label="Categoria">${escapar(objeto.categoria)}</td>
+            <td data-label="Local">${escapar(objeto.local)}</td>
+            <td data-label="Data">${formatarData(objeto.data_registro)}</td>
+            <td data-label="Situação"><span class="situacao ${classeSituacao}">${escapar(objeto.situacao)}</span></td>
+            <td class="botoes-tabela" data-label="Ações">
+                ${botaoDevolver}
+                <button type="button" class="button-small" data-acao="editar" data-id="${objeto.id}" title="Editar" aria-label="Editar objeto ${objeto.id}">${iconeEditar}</button>
+                <button type="button" class="button-small danger" data-acao="excluir" data-id="${objeto.id}" title="Excluir" aria-label="Excluir objeto ${objeto.id}">${iconeExcluir}</button>
             </td>
         `
 
@@ -104,7 +215,7 @@ function mostrarTabela(objetos) {
     })
 }
 
-// CADASTRAR ou ATUALIZAR: envia o formulário para a API
+// CADASTRAR ou ATUALIZAR: envia o formulário para a API (ou salva localmente)
 form.addEventListener('submit', async function (evento) {
     evento.preventDefault()
     esconderAviso()
@@ -117,24 +228,21 @@ form.addEventListener('submit', async function (evento) {
         situacao: form.situacao.value
     }
 
-    try {
-        const url = editandoId ? `/api/objetos/${editandoId}` : '/api/objetos'
-        const metodo = editandoId ? 'PUT' : 'POST'
+    const idEmEdicao = editandoId
 
-        const resposta = await fetch(url, {
+    try {
+        const caminho = idEmEdicao ? `/api/objetos/${idEmEdicao}` : '/api/objetos'
+        const metodo = idEmEdicao ? 'PUT' : 'POST'
+
+        await requisitarApi(caminho, {
             method: metodo,
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(objeto)
         })
 
-        const dados = await resposta.json()
+        if (modoLocal) salvarLocalmente(idEmEdicao, objeto)
 
-        if (!resposta.ok) {
-            const detalhes = dados.detalhes ? ' (' + dados.detalhes.join('; ') + ')' : ''
-            throw new Error((dados.erro || 'Erro ao salvar') + detalhes)
-        }
-
-        mostrarAviso(editandoId ? 'Objeto atualizado com sucesso!' : 'Objeto cadastrado com sucesso!', true)
+        mostrarAviso(idEmEdicao ? 'Objeto atualizado com sucesso!' : 'Objeto cadastrado com sucesso!', true)
         cancelarEdicao()
         form.reset()
         form.data_registro.value = dataDeHoje()
@@ -146,10 +254,10 @@ form.addEventListener('submit', async function (evento) {
 
 // prepara o formulário para editar um objeto
 function editar(id) {
-    const linha = document.querySelector(`tr [data-id="${id}"][data-acao="editar"]`)
-    if (!linha) return
+    const botao = document.querySelector(`tr [data-id="${id}"][data-acao="editar"]`)
+    if (!botao) return
 
-    const colunas = linha.closest('tr').children
+    const colunas = botao.closest('tr').children
 
     form.descricao.value = colunas[1].querySelector('strong').textContent
     form.categoria.value = colunas[2].textContent
@@ -164,7 +272,8 @@ function editar(id) {
     tituloForm.textContent = `Editar objeto #${id}`
     botaoSalvar.textContent = 'Salvar alterações'
     botaoCancelar.className = 'button-secondary'
-    window.scrollTo({ top: 0, behavior: 'smooth' })
+    document.getElementById('descricao').scrollIntoView({ behavior: 'smooth', block: 'center' })
+    document.getElementById('descricao').focus({ preventScroll: true })
 }
 
 // volta o formulário ao modo de cadastro
@@ -178,16 +287,17 @@ function cancelarEdicao() {
 // ATUALIZAR SITUAÇÃO: altera apenas disponível/devolvido
 async function alterarSituacao(id, situacao) {
     try {
-        const resposta = await fetch(`/api/objetos/${id}/situacao`, {
+        await requisitarApi(`/api/objetos/${id}/situacao`, {
             method: 'PATCH',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ situacao })
         })
 
-        const dados = await resposta.json()
-
-        if (!resposta.ok) {
-            throw new Error(dados.erro || 'Erro ao alterar a situação')
+        if (modoLocal) {
+            const lista = carregarLocal()
+            const objeto = lista.find(function (item) { return Number(item.id) === Number(id) })
+            if (objeto) objeto.situacao = situacao
+            gravarLocal(lista)
         }
 
         mostrarAviso('Situação alterada com sucesso!', true)
@@ -202,11 +312,10 @@ async function excluir(id) {
     if (!confirm('Tem certeza que deseja excluir este objeto?')) return
 
     try {
-        const resposta = await fetch(`/api/objetos/${id}`, { method: 'DELETE' })
-        const dados = await resposta.json()
+        await requisitarApi(`/api/objetos/${id}`, { method: 'DELETE' })
 
-        if (!resposta.ok) {
-            throw new Error(dados.erro || 'Erro ao excluir o objeto')
+        if (modoLocal) {
+            gravarLocal(carregarLocal().filter(function (item) { return Number(item.id) !== Number(id) }))
         }
 
         if (editandoId === id) cancelarEdicao()
@@ -233,7 +342,29 @@ corpoTabela.addEventListener('click', function (evento) {
 
 // eventos dos filtros
 campoBusca.addEventListener('input', listar)
-filtroSituacao.addEventListener('change', listar)
+
+chipsFiltro.forEach(function (chip) {
+    chip.addEventListener('click', function () {
+        situacaoAtiva = chip.dataset.situacao
+
+        chipsFiltro.forEach(function (item) {
+            item.classList.toggle('ativo', item === chip)
+        })
+
+        listar()
+    })
+})
+
+// botão do cabeçalho: prepara um novo cadastro
+botaoNovo.addEventListener('click', function () {
+    cancelarEdicao()
+    form.reset()
+    form.data_registro.value = dataDeHoje()
+    esconderAviso()
+    document.getElementById('descricao').scrollIntoView({ behavior: 'smooth', block: 'center' })
+    document.getElementById('descricao').focus({ preventScroll: true })
+})
+
 botaoCancelar.addEventListener('click', function () {
     cancelarEdicao()
     form.reset()

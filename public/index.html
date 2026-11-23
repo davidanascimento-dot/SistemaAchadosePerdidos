@@ -3,20 +3,26 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/png" href="assets/logo.png">
     <link rel="stylesheet" href="style.css">
     <title>Achados e Perdidos</title>
 </head>
 <body>
     <header class="cabecalho">
-        <div class="logo">AP</div>
-        <div>
-            <h1>Sistema de Achados e Perdidos</h1>
-            <p>Cadastre, consulte, atualize e devolva objetos encontrados.</p>
+        <div class="cabecalho-inner">
+            <div class="marca">
+                <img class="logo" src="assets/logo.png" alt="Logotipo Achados e Perdidos">
+                <div class="marca-texto">
+                    <h1>Achados e Perdidos</h1>
+                    <p>Cadastre, consulte e devolva objetos encontrados.</p>
+                </div>
+            </div>
+            <button type="button" id="btn-novo" class="btn-novo"><span aria-hidden="true">+</span> Novo objeto</button>
         </div>
     </header>
 
-    <main>
-        <section class="card">
+    <main class="conteudo">
+        <section class="card card-form">
             <div class="cabecalho-card">
                 <h2 id="titulo-form">Cadastrar objeto</h2>
                 <p>Preencha os dados do objeto encontrado.</p>
@@ -24,36 +30,40 @@
 
             <form id="form-objeto">
                 <div class="campo">
-                    <label for="descricao">Descrição do objeto *</label>
+                    <label for="descricao">Descrição do objeto</label>
                     <input type="text" id="descricao" name="descricao" placeholder="Ex: mochila azul com cadernos" required>
                 </div>
 
-                <div class="campo">
-                    <label for="categoria">Categoria *</label>
-                    <select id="categoria" name="categoria" required>
-                        <option value="">Selecione...</option>
-                        <option value="Documentos">Documentos</option>
-                        <option value="Eletrônicos">Eletrônicos</option>
-                        <option value="Chaves">Chaves</option>
-                        <option value="Roupas">Roupas</option>
-                        <option value="Material escolar">Material escolar</option>
-                        <option value="Mochilas e bolsas">Mochilas e bolsas</option>
-                        <option value="Outros">Outros</option>
-                    </select>
+                <div class="linha-campos">
+                    <div class="campo">
+                        <label for="categoria">Categoria</label>
+                        <select id="categoria" name="categoria" required>
+                            <option value="">Selecione...</option>
+                            <option value="Documentos">Documentos</option>
+                            <option value="Eletrônicos">Eletrônicos</option>
+                            <option value="Chaves">Chaves</option>
+                            <option value="Roupas">Roupas</option>
+                            <option value="Material escolar">Material escolar</option>
+                            <option value="Mochilas e bolsas">Mochilas e bolsas</option>
+                            <option value="Acessórios">Acessórios</option>
+                            <option value="Utensílios">Utensílios</option>
+                            <option value="Outros">Outros</option>
+                        </select>
+                    </div>
+
+                    <div class="campo">
+                        <label for="data_registro">Data</label>
+                        <input type="date" id="data_registro" name="data_registro" required>
+                    </div>
                 </div>
 
                 <div class="campo">
-                    <label for="local">Local onde foi encontrado *</label>
+                    <label for="local">Local onde foi encontrado</label>
                     <input type="text" id="local" name="local" placeholder="Ex: biblioteca, pátio, sala 12" required>
                 </div>
 
                 <div class="campo">
-                    <label for="data_registro">Data do registro *</label>
-                    <input type="date" id="data_registro" name="data_registro" required>
-                </div>
-
-                <div class="campo">
-                    <label for="situacao">Situação *</label>
+                    <label for="situacao">Situação</label>
                     <select id="situacao" name="situacao" required>
                         <option value="Disponível">Disponível</option>
                         <option value="Devolvido">Devolvido</option>
@@ -69,26 +79,33 @@
             <p id="aviso" class="aviso escondido"></p>
         </section>
 
-        <section class="card">
-            <div class="cabecalho-card">
+        <section class="card card-lista">
+            <div class="cabecalho-card cabecalho-lista">
                 <h2>Objetos registrados</h2>
-                <p id="contador">0 objeto(s) encontrado(s)</p>
+                <span id="contador">0 objeto(s) encontrado(s)</span>
             </div>
 
             <div class="filtros">
-                <input type="search" id="busca" placeholder="Buscar por descrição ou local...">
-                <select id="filtro-situacao">
-                    <option value="">Todas as situações</option>
-                    <option value="Disponível">Disponível</option>
-                    <option value="Devolvido">Devolvido</option>
-                </select>
+                <div class="busca-wrap">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <circle cx="11" cy="11" r="7"></circle>
+                        <line x1="20" y1="20" x2="16.65" y2="16.65"></line>
+                    </svg>
+                    <input type="search" id="busca" placeholder="Buscar por descrição ou local..." aria-label="Buscar objetos">
+                </div>
+
+                <div class="chips" role="group" aria-label="Filtrar por situação">
+                    <button type="button" class="chip ativo" data-situacao="">Todas <span id="total-todas">0</span></button>
+                    <button type="button" class="chip" data-situacao="Disponível">Disponíveis <span id="total-disponiveis">0</span></button>
+                    <button type="button" class="chip" data-situacao="Devolvido">Devolvidos <span id="total-devolvidos">0</span></button>
+                </div>
             </div>
 
             <div class="tabela-wrapper">
                 <table>
                     <thead>
                         <tr>
-                            <th>ID</th>
+                            <th class="col-id">ID</th>
                             <th>Descrição</th>
                             <th>Categoria</th>
                             <th>Local</th>
@@ -105,7 +122,7 @@
         </section>
     </main>
 
-    <footer>Sistema de Achados e Perdidos — Node.js + Express + Supabase</footer>
+    <footer>Sistema de Achados e Perdidos — CRUD Completo</footer>
 
     <script src="script.js"></script>
 </body>
