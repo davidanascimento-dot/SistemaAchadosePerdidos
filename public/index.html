@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="style.css">
+    <title>Achados e Perdidos</title>
+</head>
+<body>
+    <header class="cabecalho">
+        <div class="logo">AP</div>
+        <div>
+            <h1>Sistema de Achados e Perdidos</h1>
+            <p>Cadastre, consulte, atualize e devolva objetos encontrados.</p>
+        </div>
+    </header>
+
+    <main>
+        <section class="card">
+            <div class="cabecalho-card">
+                <h2 id="titulo-form">Cadastrar objeto</h2>
+                <p>Preencha os dados do objeto encontrado.</p>
+            </div>
+
+            <form id="form-objeto">
+                <div class="campo">
+                    <label for="descricao">Descrição do objeto *</label>
+                    <input type="text" id="descricao" name="descricao" placeholder="Ex: mochila azul com cadernos" required>
+                </div>
+
+                <div class="campo">
+                    <label for="categoria">Categoria *</label>
+                    <select id="categoria" name="categoria" required>
+                        <option value="">Selecione...</option>
+                        <option value="Documentos">Documentos</option>
+                        <option value="Eletrônicos">Eletrônicos</option>
+                        <option value="Chaves">Chaves</option>
+                        <option value="Roupas">Roupas</option>
+                        <option value="Material escolar">Material escolar</option>
+                        <option value="Mochilas e bolsas">Mochilas e bolsas</option>
+                        <option value="Outros">Outros</option>
+                    </select>
+                </div>
+
+                <div class="campo">
+                    <label for="local">Local onde foi encontrado *</label>
+                    <input type="text" id="local" name="local" placeholder="Ex: biblioteca, pátio, sala 12" required>
+                </div>
+
+                <div class="campo">
+                    <label for="data_registro">Data do registro *</label>
+                    <input type="date" id="data_registro" name="data_registro" required>
+                </div>
+
+                <div class="campo">
+                    <label for="situacao">Situação *</label>
+                    <select id="situacao" name="situacao" required>
+                        <option value="Disponível">Disponível</option>
+                        <option value="Devolvido">Devolvido</option>
+                    </select>
+                </div>
+
+                <div class="acoes-form">
+                    <button type="submit" id="btn-salvar">Cadastrar objeto</button>
+                    <button type="button" id="btn-cancelar" class="button-secondary escondido">Cancelar edição</button>
+                </div>
+            </form>
+
+            <p id="aviso" class="aviso escondido"></p>
+        </section>
+
+        <section class="card">
+            <div class="cabecalho-card">
+                <h2>Objetos registrados</h2>
+                <p id="contador">0 objeto(s) encontrado(s)</p>
+            </div>
+
+            <div class="filtros">
+                <input type="search" id="busca" placeholder="Buscar por descrição ou local...">
+                <select id="filtro-situacao">
+                    <option value="">Todas as situações</option>
+                    <option value="Disponível">Disponível</option>
+                    <option value="Devolvido">Devolvido</option>
+                </select>
+            </div>
+
+            <div class="tabela-wrapper">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Descrição</th>
+                            <th>Categoria</th>
+                            <th>Local</th>
+                            <th>Data</th>
+                            <th>Situação</th>
+                            <th>Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody id="corpo-tabela"></tbody>
+                </table>
+            </div>
+
+            <p id="vazio" class="vazio escondido">Nenhum objeto cadastrado ainda.</p>
+        </section>
+    </main>
+
+    <footer>Sistema de Achados e Perdidos — Node.js + Express + Supabase</footer>
+
+    <script src="script.js"></script>
+</body>
+</html>
