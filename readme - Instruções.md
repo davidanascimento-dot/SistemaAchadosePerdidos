@@ -1,6 +1,6 @@
 # Sistema de Achados e Perdidos
 
-CRUD completo (Node.js + Express + Supabase) para a atividade prática SA_03.
+CRUD completo (Node.js + Express + Supabase) para a atividade prática.
 
 ## Estrutura do projeto
 
