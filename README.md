@@ -28,7 +28,23 @@ vercel.json                        -> rotas da Vercel (/api/* para a função e 
 - Cabeçalho com a logo enviada (`public/assets/logo.png`), título e botão **Novo objeto**.
 - Painel de cadastro com descrição, categoria, data, local e situação.
 - Painel de objetos com busca, filtros por situação com contadores e tabela de resultados.
+- **Consulta individual:** clicar na descrição de um objeto abre um modal com todos os seus dados (usa `GET /api/objetos/:id`). No modal também é possível editar o objeto.
+- Ações da tabela: devolver, editar e excluir (a situação também pode ser alterada nos dois sentidos pelo formulário de edição).
 - **Responsivo:** até 980 px os painéis empilham; até 640 px os campos ficam em uma coluna e cada linha da tabela vira um cartão com rótulos.
+
+## Requisitos da atividade atendidos
+
+| Requisito | Onde está |
+| --------- | --------- |
+| Interface Front-End | `public/index.html`, `public/style.css` (layout da referência, logo e responsividade) |
+| Servidor Back-End e API | `src/app.js`, `api/index.js`, `src/routes/objetos.js` |
+| Banco de dados e persistência | `banco.sql` (Supabase) + `src/supabase.js` |
+| Cadastro, consulta e consulta individual, alteração de situação e exclusão | CRUD completo na API + interface (modal de detalhes, botões Devolver/Editar/Excluir) |
+| Comunicação Front-End ↔ Back-End com HTTP/JSON | `public/script.js` (`fetch`) |
+| Validações básicas | `validar()` em `src/controllers/objetosController.js` + campos `required` no formulário |
+| Tratamento de erros | mensagens na interface, respostas JSON com `erro`/`detalhes` e fallback local no Live Server |
+| Segurança da informação | escape de HTML no front-end, validação no back-end, `CHECK` no banco e RLS configurado |
+| Código organizado | separação entre routes, controllers, serviços e arquivos estáticos |
 
 ## Como executar localmente
 

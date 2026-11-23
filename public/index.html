@@ -124,6 +124,29 @@
 
     <footer>Sistema de Achados e Perdidos — CRUD Completo</footer>
 
+    <div id="modal-detalhes" class="modal escondido" role="dialog" aria-modal="true" aria-labelledby="modal-titulo">
+        <div class="modal-caixa">
+            <div class="modal-cabecalho">
+                <h3 id="modal-titulo">Detalhes do objeto</h3>
+                <button type="button" id="modal-fechar" class="modal-fechar" aria-label="Fechar">&times;</button>
+            </div>
+
+            <dl class="modal-detalhes">
+                <div><dt>ID</dt><dd id="det-id">-</dd></div>
+                <div><dt>Descrição</dt><dd id="det-descricao">-</dd></div>
+                <div><dt>Categoria</dt><dd id="det-categoria">-</dd></div>
+                <div><dt>Local</dt><dd id="det-local">-</dd></div>
+                <div><dt>Data do registro</dt><dd id="det-data">-</dd></div>
+                <div><dt>Situação</dt><dd id="det-situacao">-</dd></div>
+            </dl>
+
+            <div class="modal-acoes">
+                <button type="button" id="modal-editar" class="button-small">Editar objeto</button>
+                <button type="button" id="modal-fechar-acao" class="button-small">Fechar</button>
+            </div>
+        </div>
+    </div>
+
     <script src="script.js"></script>
 </body>
 </html>

@@ -400,6 +400,17 @@ td:nth-child(2) {
     overflow-wrap: break-word;
 }
 
+.link-detalhes {
+    cursor: pointer;
+    text-decoration: underline dotted transparent;
+    text-underline-offset: 3px;
+}
+
+.link-detalhes:hover {
+    color: var(--azul);
+    text-decoration-color: var(--azul);
+}
+
 td:nth-child(3),
 td:nth-child(4),
 td:nth-child(5) {
@@ -483,6 +494,80 @@ footer {
 
 .escondido {
     display: none !important;
+}
+
+/* ---------- Modal de detalhes ---------- */
+
+.modal {
+    position: fixed;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.45);
+    display: grid;
+    place-items: center;
+    padding: 16px;
+    z-index: 1000;
+}
+
+.modal-caixa {
+    background: #fff;
+    border-radius: 12px;
+    width: min(440px, 100%);
+    padding: 24px;
+    box-shadow: 0 20px 50px rgba(15, 23, 42, 0.25);
+}
+
+.modal-cabecalho {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 14px;
+}
+
+.modal-cabecalho h3 {
+    font-size: 17px;
+    font-weight: 700;
+    color: var(--texto);
+}
+
+.modal-fechar {
+    background: transparent;
+    color: var(--cinza);
+    font-size: 24px;
+    line-height: 1;
+    padding: 0 4px;
+}
+
+.modal-detalhes > div {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 9px 0;
+    border-bottom: 1px solid var(--borda);
+}
+
+.modal-detalhes dt {
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    color: #94a3b8;
+    flex-shrink: 0;
+}
+
+.modal-detalhes dd {
+    font-size: 13px;
+    color: var(--texto);
+    text-align: right;
+    overflow-wrap: break-word;
+}
+
+.modal-acoes {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    margin-top: 18px;
 }
 
 /* ---------- Responsivo ---------- */

@@ -13,6 +13,8 @@ const vazio = document.getElementById('vazio')
 const totalTodas = document.getElementById('total-todas')
 const totalDisponiveis = document.getElementById('total-disponiveis')
 const totalDevolvidos = document.getElementById('total-devolvidos')
+const modal = document.getElementById('modal-detalhes')
+const modalEditar = document.getElementById('modal-editar')
 
 // guarda o ID do objeto que está sendo editado e o filtro ativo
 let editandoId = null
@@ -199,7 +201,7 @@ function mostrarTabela(objetos) {
 
         linha.innerHTML = `
             <td class="col-id" data-label="ID">${objeto.id}</td>
-            <td data-label="Descrição"><strong>${escapar(objeto.descricao)}</strong></td>
+            <td data-label="Descrição"><strong class="link-detalhes" data-acao="ver" data-id="${objeto.id}" role="button" tabindex="0" title="Ver detalhes do objeto ${objeto.id}">${escapar(objeto.descricao)}</strong></td>
             <td data-label="Categoria">${escapar(objeto.categoria)}</td>
             <td data-label="Local">${escapar(objeto.local)}</td>
             <td data-label="Data">${formatarData(objeto.data_registro)}</td>
@@ -251,6 +253,47 @@ form.addEventListener('submit', async function (evento) {
         mostrarAviso(erro.message, false)
     }
 })
+
+// CONSULTA INDIVIDUAL: abre o modal com os dados de um objeto específico
+async function verDetalhes(id) {
+    let objeto = null
+
+    if (modoLocal) {
+        objeto = carregarLocal().find(function (item) { return Number(item.id) === Number(id) })
+    } else {
+        try {
+            objeto = await requisitarApi('/api/objetos/' + id)
+            if (modoLocal) {
+                objeto = carregarLocal().find(function (item) { return Number(item.id) === Number(id) })
+            }
+        } catch (erro) {
+            mostrarAviso('Erro ao consultar o objeto: ' + erro.message, false)
+            return
+        }
+    }
+
+    if (!objeto || !objeto.id) {
+        mostrarAviso('Objeto não encontrado.', false)
+        return
+    }
+
+    const classeSituacao = objeto.situacao === 'Devolvido' ? 'devolvido' : 'disponivel'
+
+    document.getElementById('det-id').textContent = objeto.id
+    document.getElementById('det-descricao').textContent = objeto.descricao
+    document.getElementById('det-categoria').textContent = objeto.categoria
+    document.getElementById('det-local').textContent = objeto.local
+    document.getElementById('det-data').textContent = formatarData(objeto.data_registro)
+    document.getElementById('det-situacao').innerHTML =
+        `<span class="situacao ${classeSituacao}">${escapar(objeto.situacao)}</span>`
+
+    modal.dataset.id = objeto.id
+    modal.classList.remove('escondido')
+}
+
+function fecharModal() {
+    modal.classList.add('escondido')
+}
 
 // prepara o formulário para editar um objeto
 function editar(id) {
@@ -327,17 +370,26 @@ async function excluir(id) {
     }
 }
 
-// eventos dos botões dentro da tabela
+// eventos dos botões e da descrição dentro da tabela
 corpoTabela.addEventListener('click', function (evento) {
-    const botao = evento.target.closest('button[data-acao]')
-    if (!botao) return
+    const alvo = evento.target.closest('[data-acao]')
+    if (!alvo) return
 
-    const id = Number(botao.dataset.id)
-    const acao = botao.dataset.acao
+    const id = Number(alvo.dataset.id)
+    const acao = alvo.dataset.acao
 
+    if (acao === 'ver') verDetalhes(id)
     if (acao === 'editar') editar(id)
-    if (acao === 'situacao') alterarSituacao(id, botao.dataset.situacao)
+    if (acao === 'situacao') alterarSituacao(id, alvo.dataset.situacao)
     if (acao === 'excluir') excluir(id)
+})
+
+corpoTabela.addEventListener('keydown', function (evento) {
+    if (evento.key !== 'Enter' && evento.key !== ' ') return
+    const alvo = evento.target.closest('[data-acao="ver"]')
+    if (!alvo) return
+    evento.preventDefault()
+    verDetalhes(Number(alvo.dataset.id))
 })
 
 // eventos dos filtros
@@ -370,6 +422,24 @@ botaoCancelar.addEventListener('click', function () {
     form.reset()
     form.data_registro.value = dataDeHoje()
     esconderAviso()
+})
+
+// eventos do modal de detalhes
+document.getElementById('modal-fechar').addEventListener('click', fecharModal)
+document.getElementById('modal-fechar-acao').addEventListener('click', fecharModal)
+
+modal.addEventListener('click', function (evento) {
+    if (evento.target === modal) fecharModal()
+})
+
+document.addEventListener('keydown', function (evento) {
+    if (evento.key === 'Escape' && !modal.classList.contains('escondido')) fecharModal()
+})
+
+modalEditar.addEventListener('click', function () {
+    const id = Number(modal.dataset.id)
+    fecharModal()
+    editar(id)
 })
 
 // inicia a aplicação
